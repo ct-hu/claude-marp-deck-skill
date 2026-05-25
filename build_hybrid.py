@@ -211,6 +211,74 @@ def _section(body: str, name: str) -> str:
     return m.group(1).strip() if m else ""
 
 
+# ── lint: detect ASCII-art code blocks that mix box-drawing with CJK ────────
+#
+# In monospace fonts the assumption "1 CJK char == 2 ASCII columns" is not
+# strictly honored by PDF rendering — box borders drift slightly whenever a
+# row contains both kinds of content. Such diagrams render pixel-perfectly
+# when redrawn as hand-SVG, so the build prints a hint pointing the author
+# at deck.toml `[slides.N] type = "svg"`.
+
+# Unicode blocks worth flagging:
+#   U+2500..U+257F  Box Drawing       ┌─┐│└┘├┤┬┴┼ etc
+#   U+2580..U+259F  Block Elements    ▀▄█▌▐ etc
+#   U+25A0..U+25FF  Geometric Shapes  ▲►▼◄ ⌅ etc
+#   U+2190..U+21FF  Arrows            ←→↑↓⇒ etc
+_BOX_DRAW_RE = re.compile(r"[←-⇿─-▟■-◿]")
+
+# CJK ranges:
+#   U+3000..U+303F  CJK Symbols and Punctuation
+#   U+3040..U+30FF  Hiragana / Katakana
+#   U+4E00..U+9FFF  CJK Unified Ideographs (main, covers 中文)
+#   U+FF00..U+FFEF  Fullwidth Forms
+_CJK_RE = re.compile(r"[　-〿぀-ヿ一-鿿＀-￯]")
+
+# Fenced code block (with optional language tag), multi-line content.
+_FENCED_RE = re.compile(r"^```[^\n]*\n(.*?)^```", re.MULTILINE | re.DOTALL)
+
+
+def scan_for_ascii_art_with_cjk(slides: list[dict], deck_cfg: dict, *,
+                                 box_threshold: int = 5,
+                                 cjk_threshold: int = 3) -> list[dict]:
+    """Find fenced code blocks that mix box-drawing chars with CJK content.
+
+    Slides already mapped to a non-table tool in deck.toml are skipped —
+    those code blocks aren't actually rendered (the image takes over).
+
+    Thresholds default to (5 box chars, 3 CJK chars) so single-line tree
+    annotations like `└─ note` don't false-trigger; real ASCII diagrams
+    blow well past these numbers.
+
+    Returns a list of dicts: {slide, box_count, cjk_count, preview}.
+    """
+    findings = []
+    slide_cfgs = deck_cfg.get("slides", {})
+    for slide in slides:
+        num = slide["num"]
+        # Skip slides already replaced by a generator — the code block in
+        # source won't render anyway, no point flagging.
+        if slide_cfgs.get(str(num), {}).get("type"):
+            continue
+        content = slide.get("content") or ""
+        for m in _FENCED_RE.finditer(content):
+            block = m.group(1)
+            box_count = len(_BOX_DRAW_RE.findall(block))
+            cjk_count = len(_CJK_RE.findall(block))
+            if box_count >= box_threshold and cjk_count >= cjk_threshold:
+                # First non-empty stripped line, as a one-line preview
+                preview = next(
+                    (line.strip() for line in block.split("\n") if line.strip()),
+                    "",
+                )
+                findings.append({
+                    "slide": num,
+                    "box_count": box_count,
+                    "cjk_count": cjk_count,
+                    "preview": preview,
+                })
+    return findings
+
+
 # ── per-slide generators ────────────────────────────────────────────────────
 
 def _is_cache_fresh(out_path: Path, *deps: Path) -> bool:
@@ -486,6 +554,18 @@ def main():
     # Parse source
     slides = parse_source_markdown(source_md)
     print(f"[parse] {len(slides)} slides from {source_md.name}")
+
+    # Lint: warn about ASCII-art code blocks that mix box-drawing with CJK.
+    # These render slightly misaligned in PDF because monospace fonts don't
+    # honor the "CJK == 2 ASCII columns" assumption exactly.
+    lint_hits = scan_for_ascii_art_with_cjk(slides, cfg)
+    if lint_hits:
+        print(f"[lint] {len(lint_hits)} code block(s) mixing box-drawing chars with CJK "
+              f"— likely to misalign in PDF:")
+        for h in lint_hits:
+            print(f"  slide-{h['slide']:02d}  {h['box_count']} box + {h['cjk_count']} CJK chars")
+            print(f"            preview: {h['preview'][:70]}")
+        print(f"  → consider hand-SVG: add [slides.N] type = \"svg\" to deck.toml")
 
     img_dir = deck_dir / "img"
     img_dir.mkdir(exist_ok=True)
