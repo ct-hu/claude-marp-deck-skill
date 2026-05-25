@@ -551,6 +551,18 @@ python3 build_hybrid.py --deck /path/to/deck.toml
 衍生物（pptx / pdf / img/）放 .gitignore，source（deck.toml / mermaid/ /
 charts/ / svg/ / source markdown）入 git。
 
+### Build 時自動印的東西
+
+| 區段 | 含義 |
+|---|---|
+| `[parse] N slides from source.md` | 確認 source.md 被解析到正確的 slide 數 |
+| `[lint] ... mixing box-drawing chars with CJK` | 偵測到 ASCII art 內混用 box-drawing (`┌─┐│`) 跟 CJK 字元 — PDF 渲染容易因為「CJK == 2 ASCII 欄寬」的假設不嚴格而對不齊。建議把該 slide 在 deck.toml 加 `type = "svg"` 改 hand-SVG（pixel-precise、沒這個問題） |
+| `[plan] N mermaid · N chart · N svg · N gemini` | 各種 image generator 的 slide 數量 |
+| `[aspect]` | 每張 image 的 aspect class + grid layout |
+| `[pptx]` / `[pdf]` | 最終輸出檔路徑 + 大小 |
+
+`[lint]` 是建議性質、不會阻擋 build。預設 threshold：5+ box-drawing 字元 + 3+ CJK 字元才觸發（單行樹枝註解 `└─ 註解` 這種不會誤觸）。已經設定 `type = svg/mermaid/chart/gemini` 的 slide 會被自動跳過（那些 code block 不會被渲染）。
+
 ## 4. DESIGN.md：視覺單一真理源
 
 `DESIGN.md` 章節：
