@@ -1,0 +1,266 @@
+/* @theme marp-deck */
+/* AUTO-GENERATED from DESIGN.md — do not edit by hand. */
+@import 'default';
+
+:root {
+  --color-fg: #1A1A1A;
+  --color-bg: #FAF6EE;
+  --color-accent: #D9633E;
+  --color-warn: #B82E2E;
+  --color-positive: #3F7F4C;
+  --color-muted: #6B6258;
+  --color-border: #E5DDC9;
+  --color-code-bg: #1F2329;
+}
+
+section {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: Inter, Noto Sans TC, sans-serif;
+  font-size: 20px;
+  padding: 44px 64px 52px 64px;
+  line-height: 1.5;
+}
+
+h1 {
+  font-family: Inter Tight, Noto Sans TC, sans-serif;
+  font-size: 38px;
+  font-weight: 800;
+  line-height: 1.15;
+  margin: 0 0 14px 0;
+  border-bottom: 2px solid var(--color-accent);
+  padding-bottom: 8px;
+}
+h2 { font-family: Inter Tight, Noto Sans TC, sans-serif; font-size: 23px; color: var(--color-accent); font-weight: 700; margin: 10px 0 4px; }
+h3 { font-family: Inter Tight, Noto Sans TC, sans-serif; font-size: 19px; font-weight: 700; margin: 8px 0 4px; }
+
+strong { color: var(--color-accent); }
+
+ul, ol { padding-left: 24px; margin: 6px 0; }
+li { margin-bottom: 4px; font-size: 18px; line-height: 1.45; }
+
+p { margin: 6px 0; }
+
+/* Chapter prefix (v1.5) — small mono uppercase label above H1,
+ * "— CHAPTER 02 · GETTING STARTED" style. Optional via source field. */
+.chapter-prefix {
+  font-family: JetBrains Mono, Consolas, monospace;
+  font-size: 14px;
+  letter-spacing: 0.12em;
+  color: var(--color-accent);
+  text-transform: uppercase;
+  margin: 0 0 14px 0;
+  font-weight: 500;
+}
+.chapter-prefix::before {
+  content: "— ";
+}
+
+table {
+  width: 100%; border-collapse: collapse;
+  font-size: 16px; margin: 8px 0;
+}
+th {
+  background: var(--color-accent); color: white;
+  padding: 6px 10px; text-align: left; font-weight: 600;
+}
+td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+tr:nth-child(even) td { background: #F2EDDF; }  /* warm-tinted alt row */
+
+/* Inline code: subtle on warm bg, slight tint. */
+code {
+  background: #EFE7D2; padding: 2px 6px; border-radius: 3px;
+  font-family: JetBrains Mono, Consolas, monospace; font-size: 0.88em;
+  color: var(--color-fg);
+}
+
+/* Code blocks: build_hybrid.py transforms ```fenced``` source into
+ * <div class="codeblock"> to bypass Marp's marp-pre auto-scaling, which
+ * silently shrinks fonts when a single line overflows.
+ *
+ * v1.5 — dark code block style (Tier 1 visual refresh):
+ *   - dark #1F2329 bg with light cream text (high contrast on warm slide bg)
+ *   - rounded corners, no left accent bar (looks more like terminal)
+ *   - bigger font (13 → 15) so code is genuinely readable */
+pre, .codeblock {
+  background: #1F2329;
+  color: #E8E2D3;
+  padding: 14px 18px;
+  border-radius: 8px;
+  font-family: JetBrains Mono, Consolas, monospace;
+  font-size: 14px; line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  overflow: hidden;
+  margin: 8px 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+pre code { background: transparent; padding: 0; color: inherit; }
+
+blockquote {
+  border-left: 4px solid var(--color-muted);
+  background: #F2EDDF;
+  padding: 10px 16px; margin: 10px 0;
+  font-style: italic; color: var(--color-muted);
+  font-size: 17px;
+}
+
+/* Two-column slide grid: left text + right image (v1.1 — image-emphasised) */
+.slide-grid {
+  display: grid;
+  grid-template-columns: 38% 62%;
+  gap: 24px;
+  align-items: start;
+  width: 100%;
+}
+.left-col { overflow: hidden; min-width: 0; }
+.right-col {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+}
+.right-col img {
+  width: 100%; max-width: 100%;
+  max-height: 65vh;
+  object-fit: contain;
+  display: block;
+}
+
+/* Aspect-aware grid override (v1.3) — build_hybrid.py reads each SVG's
+ * viewBox and adds img-very-tall / img-tall / img-wide to .slide-grid so
+ * the column split matches the image's natural shape. Without this, a
+ * tall mermaid (e.g. flowchart TD chain, sequence diagram) gets shrunk
+ * to fit a wide right-col, leaving text unreadably small. */
+.slide-grid.img-very-tall {   /* aspect < 0.50 */
+  grid-template-columns: 65% 35%;
+}
+.slide-grid.img-very-tall .right-col img { max-height: 82vh; }
+
+.slide-grid.img-tall {        /* 0.50 ≤ aspect < 0.90 */
+  grid-template-columns: 50% 50%;
+}
+.slide-grid.img-tall .right-col img { max-height: 78vh; }
+
+.slide-grid.img-wide {        /* aspect > 1.80 */
+  grid-template-columns: 30% 70%;
+}
+.slide-grid.img-wide .right-col img { max-height: 72vh; }
+
+/* Density-aware widening: when left-col content has a code block or many
+ * lines AND image aspect is default (no img-tall/wide class), narrow the
+ * right-col from 62% → 55%. Default-aspect images are height-bound at
+ * max-h:65vh, so this reclaims the unused horizontal space for text
+ * without shrinking the image. */
+.slide-grid.left-dense {
+  grid-template-columns: 45% 55%;
+}
+
+/* Section: anchor content to TOP (override Marp's default justify-content:center),
+ * use margin-top:auto on the design-rationale callout to push it to the bottom
+ * while still keeping everything else flowing from the top. */
+section {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  overflow: hidden;
+}
+.slide-grid {
+  flex: 0 1 auto;
+}
+.callout.design-rationale {
+  margin-top: auto;  /* push to slide bottom */
+}
+/* Cover keeps its vertical centering. */
+section.cover {
+  justify-content: center;
+}
+
+section.cover h1 {
+  font-size: 52px;
+  font-weight: 800;
+  line-height: 1.05;
+  border: none;
+  padding: 0;
+  margin-bottom: 22px;
+}
+section.cover { padding: 90px 80px 64px 80px; }
+section.cover .subtitle { font-size: 22px; font-style: normal; color: var(--color-fg); }
+/* Cover tagline — em-dash 後半段，視覺上是 H1 的延續但語意 / metadata 獨立 */
+section.cover .cover-tagline {
+  font-size: 32px;
+  font-weight: 500;
+  color: var(--color-fg);
+  margin: -8px 0 18px 0;
+  line-height: 1.2;
+}
+
+/* Footer + page number — small mono on muted color (v1.5) */
+footer {
+  font-family: JetBrains Mono, Consolas, monospace;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  color: var(--color-muted);
+  text-transform: uppercase;
+}
+section::after {
+  font-family: JetBrains Mono, Consolas, monospace;
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+/* Subtitle (副標) — slim lede under H1, before main content */
+.subtitle {
+  font-size: 17px;
+  font-weight: 400;
+  color: var(--color-muted);
+  margin: -2px 0 14px 0;
+  line-height: 1.4;
+  font-style: italic;
+}
+
+/* Callout strips (v1.2) — bottom-of-slide design rationale + warnings */
+.callout {
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 15px;
+  line-height: 1.45;
+}
+.callout-label {
+  font-weight: 700;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.callout.design-rationale {
+  background: #1A2540;
+  color: #E5E7EB;
+  margin-bottom: 30px;  /* clearance for footer text + page number below */
+}
+.callout.design-rationale .callout-label { color: #93C5FD; }
+
+.callout.key-concept {
+  background: #EFF6FF;
+  border-left: 4px solid var(--color-accent);
+  color: var(--color-fg);
+}
+.callout.key-concept .callout-label { color: var(--color-accent); }
+
+.callout.anti-pattern {
+  background: #FEF2F2;
+  border-left: 4px solid var(--color-warn);
+  color: var(--color-fg);
+}
+.callout.anti-pattern .callout-label { color: var(--color-warn); }
+
+.callout.observation {
+  background: #F0FDF4;
+  border-left: 4px solid var(--color-positive);
+  color: var(--color-fg);
+}
+.callout.observation .callout-label { color: var(--color-positive); }

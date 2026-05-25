@@ -1,0 +1,26 @@
+# 所有 Gemini Flash image gen 都接這段、不再 per-slide 重寫
+
+Style: polished flat 2D vector technical illustration on pure white
+(#FFFFFF) background. Thin black outlines, solid color fills only.
+Palette: blue #D9633E for primary/active elements,
+red #B82E2E for failures/costs/warnings, green
+#3F7F4C for success/positive states, gray
+#6B6258 for secondary/passive elements. No gradients, no 3D,
+no photography, no decorative icons unrelated to the subject. Aspect
+ratio 3:2, diagram fills the canvas with comfortable margins.
+
+Labels — PROMINENT and legible for projector viewing at 6m distance.
+Use BIG bold sans-serif text (Inter / Noto Sans TC equivalent), not tiny captions.
+
+Language — describe in Traditional Chinese (繁體中文); keep technical
+terms / proper nouns / variable names / acronyms in English.
+Examples:
+  ✓ "代價：1 RTT setup"             (Chinese description + English term)
+  ✓ "TCP connection · 4-tuple 識別"
+  ✓ "stream A：seq=100..200 卡住"
+  ✗ "cost: 1 RTT before first data" (all English — DO NOT do this)
+  ✗ "傳輸控制協定握手"               (translated proper noun — DO NOT)
+
+Keep these English: TCP, UDP, QUIC, ACK, SYN, HOL, BDP, RTT, CWND,
+sliding window, slow start, AIMD, handshake, stream, packet, datagram,
+seq=NNN, src_ip, dst_port, etc.

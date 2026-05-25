@@ -1,0 +1,20 @@
+# AUTO-GENERATED from DESIGN.md — do not edit by hand.
+figure.facecolor: FAF6EE
+axes.facecolor: FAF6EE
+axes.edgecolor: 1A1A1A
+axes.labelcolor: 1A1A1A
+axes.titlesize: 24
+axes.titleweight: bold
+axes.labelsize: 20
+xtick.labelsize: 17
+ytick.labelsize: 17
+legend.fontsize: 16
+axes.spines.top: False
+axes.spines.right: False
+grid.color: E5DDC9
+grid.alpha: 0.25
+font.family: sans-serif
+font.sans-serif: Noto Sans CJK JP, Noto Sans CJK TC, Noto Sans CJK SC, Microsoft JhengHei, Microsoft YaHei, PingFang TC, PingFang SC, Heiti TC, Hiragino Sans GB, Noto Sans TC, Noto Sans SC, Noto Sans HK, Noto Sans JP, SimHei, SimSun, Droid Sans Fallback, Inter, sans-serif
+axes.prop_cycle: cycler('color', ['D9633E', '6B6258', 'B82E2E', '3F7F4C'])
+lines.linewidth: 2.8
+axes.unicode_minus: False
