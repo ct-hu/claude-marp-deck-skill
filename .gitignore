@@ -1,0 +1,12 @@
+# Node deps (marp-cli / mmdc 本地裝會跑這裡)
+node_modules/
+package-lock.json
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Editor
+.DS_Store
+.vscode/
+.idea/
