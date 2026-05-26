@@ -397,6 +397,14 @@ def emit_mermaid_config(spec: dict, out: Path) -> None:
             "clusterBkg": t["bg"],
             "clusterBorder": t["border-subtle"],
         },
+        # mermaid-cli 11 hardcodes sequence actor/message labels to 16px and
+        # ignores sequence.*FontSize — themeCSS with !important is the only lever.
+        # Modest 20/18 so labels still fit the boxes mermaid sized at 16px.
+        "themeCSS": (
+            ".actor, .actor tspan { font-size: 20px !important; } "
+            ".messageText { font-size: 18px !important; } "
+            ".noteText, .noteText tspan { font-size: 16px !important; }"
+        ),
     }
     out.write_text(json.dumps(cfg, indent=2, ensure_ascii=False), encoding="utf-8")
 

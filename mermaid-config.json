@@ -21,5 +21,6 @@
     "signalTextColor": "#1A1A1A",
     "clusterBkg": "#FAF6EE",
     "clusterBorder": "#E5DDC9"
-  }
+  },
+  "themeCSS": ".actor, .actor tspan { font-size: 20px !important; } .messageText { font-size: 18px !important; } .noteText, .noteText tspan { font-size: 16px !important; }"
 }

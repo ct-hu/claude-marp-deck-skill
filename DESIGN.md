@@ -126,6 +126,9 @@ mermaid:
     noteBkgColor: "#FAFAFA"
     noteBorderColor: "{{ tokens.muted }}"
     signalColor: "{{ tokens.accent-primary }}"
+  # mermaid-cli 11 把 sequence actor/message 寫死 16px、忽略 sequence.*FontSize，
+  # 只能靠 themeCSS !important 拉大（保守 20/18、避免撐爆 box）。derive_assets emit：
+  themeCSS: ".actor{font-size:20px!important} .messageText{font-size:18px!important} .noteText{font-size:16px!important}"
 ```
 
 ## 6. matplotlib style (auto-derived)

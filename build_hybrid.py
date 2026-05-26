@@ -39,6 +39,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
@@ -442,7 +443,10 @@ def emit_marp_deck(slides, deck_cfg, image_dir, out_md, footer):
             lines.append(f'<p class="cover-tagline">{cover_tagline}</p>')
         # Subtitle lede (v1.2)
         if s.get("subtitle"):
-            sub = s["subtitle"].strip().replace("\n", " ")
+            # Subtitle is emitted as raw HTML (<p class="subtitle">), so Marp
+            # does NOT parse inline markdown inside it — run the same minimal
+            # md→HTML pass used for callouts so **bold** / `code` render.
+            sub = _inline_md_to_html(s["subtitle"].strip().replace("\n", " "))
             lines.append("")
             lines.append(f"<p class=\"subtitle\">{sub}</p>")
         lines.append("")
@@ -526,12 +530,83 @@ def _emit_inline_callouts(lines, s):
 
 # ── main pipeline ───────────────────────────────────────────────────────────
 
+def check_skill_freshness():
+    """Before building, warn if this skill clone is behind its git remote — so
+    nobody makes slides with stale rules. Non-fatal: silently skips when
+    SKILL_DIR isn't a git checkout, has no remote, or the network is down.
+    Throttled to one network fetch per 10 min so rapid re-builds stay fast."""
+    git_dir = SKILL_DIR / ".git"
+    if not git_dir.exists():
+        return
+    try:
+        branch = subprocess.run(
+            ["git", "-C", str(SKILL_DIR), "rev-parse", "--abbrev-ref", "HEAD"],
+            capture_output=True, text=True, timeout=5).stdout.strip() or "main"
+        fetch_head = git_dir / "FETCH_HEAD"
+        stale = (not fetch_head.exists()
+                 or time.time() - fetch_head.stat().st_mtime > 600)
+        if stale:
+            subprocess.run(["git", "-C", str(SKILL_DIR), "fetch", "--quiet"],
+                           capture_output=True, text=True, timeout=8)
+        r = subprocess.run(
+            ["git", "-C", str(SKILL_DIR), "rev-list", "--count", f"HEAD..origin/{branch}"],
+            capture_output=True, text=True, timeout=5)
+        n = r.stdout.strip()
+        if r.returncode == 0 and n.isdigit() and int(n) > 0:
+            print(f"[skill] ⚠️  marp-deck skill 落後 remote {n} 個 commit — "
+                  f"做簡報前建議先更新，免得用到舊規則：")
+            print(f"[skill]     git -C {SKILL_DIR} pull --ff-only")
+    except Exception:
+        pass  # never block a build on the freshness check
+
+
+def lint_deck(slides, cfg, img_dir):
+    """Build-time visual-quality guardrails — codifies the §視覺硬規範 checks so
+    they run automatically instead of relying on the author's memory.
+    Emits non-fatal WARNs only; never changes exit status."""
+    SVG_FONT_FLOOR = 18   # hand-SVG source floor ≈ body 20px × 0.7 ÷ ~0.78 scale
+    warns = []
+    for s in slides:
+        num = s["num"]
+        typ = cfg.get("slides", {}).get(str(num), {}).get("type", "table")
+        # (A) density — text-heavy left column → audience fatigue.
+        body = s.get("content", "") or ""
+        nchars = len(re.sub(r"\s", "", body))
+        nlines = body.count("\n") + 1
+        if nchars > 360 or nlines > 19:
+            warns.append(f"slide-{num:02d}  密度偏高 ({nchars} 字 / {nlines} 行) — "
+                         f"考慮拆頁或精簡（assertion-evidence：一頁一主張）")
+        svg = img_dir / f"slide-{num:02d}.svg"
+        if not svg.exists():
+            continue
+        txt = svg.read_text(encoding="utf-8", errors="replace")
+        # (E) literal markdown inside SVG <text> (SVG doesn't parse markdown).
+        for tb in re.findall(r"<text\b[^>]*>(.*?)</text>", txt, re.S):
+            if "**" in tb or re.search(r"`[^`]+`", tb):
+                snip = re.sub(r"<[^>]+>", "", tb).strip()[:24]
+                warns.append(f"slide-{num:02d}  SVG <text> 內有字面 markdown（**/`）"
+                             f"「{snip}」→ 改用 <tspan font-weight> / 去掉反引號")
+                break
+        # (B) hand-SVG font too small (mermaid/chart fonts handled separately).
+        if typ == "svg":
+            sizes = [float(x) for x in re.findall(r'font-size="([\d.]+)"', txt)]
+            if sizes and min(sizes) < SVG_FONT_FLOOR:
+                warns.append(f"slide-{num:02d}  hand-SVG 最小字級 {min(sizes):g}px "
+                             f"< floor {SVG_FONT_FLOOR}px — 投影會偏小，放大字或減少元素")
+    if warns:
+        print(f"[lint] {len(warns)} 視覺品質提醒（非致命）：")
+        for w in warns:
+            print(f"  ⚠ {w}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--deck", required=True, type=Path,
                     help="path to deck.toml")
     ap.add_argument("--parallel", default=3, type=int)
     args = ap.parse_args()
+
+    check_skill_freshness()
 
     cfg = tomllib.loads(args.deck.read_text(encoding="utf-8"))
     deck_dir = args.deck.resolve().parent
@@ -637,6 +712,9 @@ def main():
             extras.append("+left-dense")
         extra = f" [{', '.join(extras)}]" if extras else ""
         print(f"  slide-{num:02d}  aspect={ar:.2f}  → {cls}{extra}{flag}")
+
+    # Visual-quality guardrails (font floor / literal-md-in-SVG / density).
+    lint_deck(slides, cfg, img_dir)
 
     # Render — use absolute paths since cwd is marp install dir
     deck_md_abs = deck_md.resolve()
